@@ -19,3 +19,8 @@ A professional-grade dermatological advisor system that combines a deep learning
    ```bash
    git clone <your-repo-link>
    cd skin-disease-detector
+   python -m venv venv
+   .\venv\Scripts\activate
+   pip install "numpy<2"
+   pip install -r requirements.txt
+   python main.py
