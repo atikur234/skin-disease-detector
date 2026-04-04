@@ -1,0 +1,6 @@
+# .gitignore
+data/
+weights/
+__pycache__/
+.env
+.ipynb_checkpoints/
