@@ -5,6 +5,11 @@ import io
 from PIL import Image
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 import uvicorn
+from dotenv import load_dotenv
+
+# Load environment variables to access the key for masking
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Ensure scripts folder is discoverable
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -32,23 +37,23 @@ CLASSES = ["Eczema", "Warts", "Melanoma", "Atopic Dermatitis", "Basal Cell Carci
 @app.post("/analyze_skin")
 async def analyze_skin(file: UploadFile = File(...)):
     try:
-        # 🚀 LATENCY FIX: Resize image immediately to reduce processing load
+        
         image_data = await file.read()
         img = Image.open(io.BytesIO(image_data))
         
-        # Convert to RGB and resize to what the model actually expects (224x224)
+        
         img = img.convert("RGB").resize((224, 224))
         
-        # Convert back to bytes for the classifier
+       
         img_byte_arr = io.BytesIO()
         img.save(img_byte_arr, format='JPEG')
         optimized_image = img_byte_arr.getvalue()
 
-        # 1. Prediction (Local - Very Fast)
+        
         class_idx, confidence = classifier.predict(optimized_image)
         disease_name = CLASSES[class_idx]
 
-        # 2. Advice (Remote - The Optimized Part)
+        
         ai_analysis = get_llm_advice(disease_name, confidence)
 
         return {
@@ -57,6 +62,20 @@ async def analyze_skin(file: UploadFile = File(...)):
             "ai_advisor": ai_analysis
         }
     except Exception as e:
+        
+        raw_error = str(e)
+        
+        
+        if GEMINI_API_KEY and GEMINI_API_KEY in raw_error:
+            sanitized_error = raw_error.replace(GEMINI_API_KEY, "********[MASKED_KEY]********")
+        else:
+            sanitized_error = raw_error
+            
+        
+        print(f"❌ [Error Log] Traceback: {sanitized_error}")
+        
+        
+       
         raise HTTPException(status_code=500, detail="Inference failure.")
 
 if __name__ == "__main__":
